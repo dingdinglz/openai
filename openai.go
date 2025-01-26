@@ -11,5 +11,5 @@ type Client struct {
 
 // 内部生成一个用于访问的内容
 func (client Client) newHttpClient() *resty.Request {
-	return resty.New().R().SetHeader("Accept", "application/json").SetHeader("Authorization", "Bearer "+client.Config.ApiKey)
+	return resty.New().R().SetHeader("Content-Type", "application/json").SetHeader("Authorization", "Bearer "+client.Config.ApiKey)
 }
