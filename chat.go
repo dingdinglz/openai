@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 )
@@ -40,6 +41,22 @@ type realChatResponse struct {
 		PromptTokens     int `json:"prompt_tokens"`
 		TotalTokens      int `json:"total_tokens"`
 	} `json:"usage"`
+}
+
+type realChatStreamResponse struct {
+	ID                string `json:"id"`
+	Object            string `json:"object"`
+	Created           int    `json:"created"`
+	Model             string `json:"model"`
+	SystemFingerprint string `json:"system_fingerprint"`
+	Choices           []struct {
+		Index int `json:"index"`
+		Delta struct {
+			Content string `json:"content"`
+		} `json:"delta"`
+		Logprobs     interface{} `json:"logprobs"`
+		FinishReason interface{} `json:"finish_reason"`
+	} `json:"choices"`
 }
 
 func checkChatRequest(cr *ChatRequest) {
@@ -117,4 +134,52 @@ func (client Client) EasyChat(model string, prompt string, message string) (stri
 		return "", errors.New(errorMessage)
 	}
 	return res.Choices[0].Message.Content, nil
+}
+
+// api /chat/completions 的流式实现
+func (client Client) ChatStream(model string, messages []Message, during func(string)) error {
+	reqBody := ChatRequest{}
+	reqBody.Messages = messages
+	reqBody.Stream = true
+	reqBody.Model = model
+	checkChatRequest(&reqBody)
+	reqClient := client.newStreamClient()
+	jsonBody, e := json.Marshal(reqBody)
+	if e != nil {
+		return e
+	}
+	reqClient.SetBody(string(jsonBody))
+	reqClient.SetDoNotParseResponse(true)
+	httpres, e := reqClient.Post(client.Config.BaseUrl + "/chat/completions")
+	if e != nil {
+		return e
+	}
+	defer httpres.RawBody().Close()
+	scanner := bufio.NewScanner(httpres.RawBody())
+	initFlag := true
+	for scanner.Scan() {
+		_res := scanner.Text()
+		if _res == "" {
+			continue
+		}
+		if _res == "data: [DONE]" {
+			break
+		}
+		if initFlag {
+			resError, e := parseRealError([]byte(_res))
+			if e == nil {
+				return errors.New(resError)
+			}
+			initFlag = false
+			continue
+		}
+		_res = _res[6:]
+		var _json realChatStreamResponse
+		e := json.Unmarshal([]byte(_res), &_json)
+		if e != nil {
+			return e
+		}
+		during(_json.Choices[0].Delta.Content)
+	}
+	return nil
 }

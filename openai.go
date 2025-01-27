@@ -13,3 +13,8 @@ type Client struct {
 func (client Client) newHttpClient() *resty.Request {
 	return resty.New().R().SetHeader("Content-Type", "application/json").SetHeader("Authorization", "Bearer "+client.Config.ApiKey)
 }
+
+// 用于SSE的请求
+func (client Client) newStreamClient() *resty.Request {
+	return resty.New().R().SetHeader("Content-Type", "application/json").SetHeader("Authorization", "Bearer "+client.Config.ApiKey)
+}
