@@ -183,3 +183,74 @@ func (client Client) ChatStream(model string, messages []Message, during func(st
 	}
 	return nil
 }
+
+// api /chat/completions 的高自定义度实现
+func (client Client) ChatWithConfig(config ChatRequest) (*Message, error) {
+	config.Stream = false
+	checkChatRequest(&config)
+	reqClient := client.newHttpClient()
+	jsonBody, e := json.Marshal(config)
+	if e != nil {
+		return nil, e
+	}
+	reqClient.SetBody(string(jsonBody))
+	res := &realChatResponse{}
+	reqClient.SetResult(res)
+	httpres, e := reqClient.Post(client.Config.BaseUrl + "/chat/completions")
+	if e != nil {
+		return nil, e
+	}
+	if httpres.StatusCode() != 200 {
+		errorMessage, e := parseRealError(httpres.Body())
+		if e != nil {
+			return nil, errors.New(string(httpres.Body()))
+		}
+		return nil, errors.New(errorMessage)
+	}
+	return &res.Choices[0].Message, nil
+}
+
+// api /chat/completions 的高自定义度流式实现
+func (client Client) ChatStreamWithConfig(config ChatRequest, during func(string)) error {
+	config.Stream = true
+	checkChatRequest(&config)
+	reqClient := client.newStreamClient()
+	jsonBody, e := json.Marshal(config)
+	if e != nil {
+		return e
+	}
+	reqClient.SetBody(string(jsonBody))
+	reqClient.SetDoNotParseResponse(true)
+	httpres, e := reqClient.Post(client.Config.BaseUrl + "/chat/completions")
+	if e != nil {
+		return e
+	}
+	defer httpres.RawBody().Close()
+	scanner := bufio.NewScanner(httpres.RawBody())
+	initFlag := true
+	for scanner.Scan() {
+		_res := scanner.Text()
+		if _res == "" {
+			continue
+		}
+		if _res == "data: [DONE]" {
+			break
+		}
+		if initFlag {
+			resError, e := parseRealError([]byte(_res))
+			if e == nil {
+				return errors.New(resError)
+			}
+			initFlag = false
+			continue
+		}
+		_res = _res[6:]
+		var _json realChatStreamResponse
+		e := json.Unmarshal([]byte(_res), &_json)
+		if e != nil {
+			return e
+		}
+		during(_json.Choices[0].Delta.Content)
+	}
+	return nil
+}

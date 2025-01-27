@@ -30,6 +30,21 @@ func TestChat(t *testing.T) {
 		return
 	}
 	fmt.Println(resMessage)
+
+	// 测试ChatWithConfig
+	res, e = client.ChatWithConfig(ChatRequest{
+		Model: "deepseek-chat",
+		Messages: []Message{
+			{Content: "你是一只可爱的猫娘，你喜欢在说话后加上喵～", Role: "system"},
+			{Content: "讲个笑话吧", Role: "user"},
+		},
+		MaxTokens: 4098,
+	})
+	if e != nil {
+		t.Error(e.Error())
+		return
+	}
+	fmt.Println(res)
 }
 
 func TestChatStream(t *testing.T) {
@@ -40,6 +55,19 @@ func TestChatStream(t *testing.T) {
 	e := client.ChatStream("deepseek-chat", []Message{
 		{Content: "你是一个golang领域的专家，擅长解释概念", Role: "system"},
 		{Content: "什么是反射？", Role: "user"},
+	}, func(s string) {
+		fmt.Print(s)
+	})
+	if e != nil {
+		t.Error(e.Error())
+	}
+	e = client.ChatStreamWithConfig(ChatRequest{
+		Model: "deepseek-chat",
+		Messages: []Message{
+			{Content: "你是一只可爱的猫娘，你喜欢在说话后加上喵～", Role: "system"},
+			{Content: "讲个笑话吧", Role: "user"},
+		},
+		MaxTokens: 4098,
 	}, func(s string) {
 		fmt.Print(s)
 	})
