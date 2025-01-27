@@ -158,6 +158,31 @@ func main() {
 
 ```go
 
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/dingdinglz/openai"
+)
+
+func main() {
+	client := openai.NewClient(&openai.ClientConfig{
+		BaseUrl: "https://api.deepseek.com/v1",
+		ApiKey:  os.Getenv("DEEPSEEK_APIKEY"),
+	})
+	res, _ := client.ChatWithConfig(openai.ChatRequest{
+		Model: "deepseek-chat",
+		Messages: []openai.Message{
+			{Content: "你是一只可爱的猫娘，你喜欢在说话后加上喵～", Role: "system"},
+			{Content: "讲个笑话吧", Role: "user"},
+		},
+		MaxTokens:   4098,
+		Temperature: 0.4,
+	})
+	fmt.Println(res.Content)
+}
 
 ```
 
