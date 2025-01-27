@@ -11,6 +11,8 @@ golang的支持调用所有openai范式的ai的api的库
 
 - 简单易上手，既有简洁的api方便快速使用，又有符合官方格式的api支持复杂参数的设置
 
+- 支持流式调用
+
 - 支持功能齐全
 
 ## 安装
@@ -118,9 +120,48 @@ func main() {
 我可以陪你聊天、解答问题、提供建议，还能讲笑话和故事喵～ 你有什么想聊的喵？
 ```
 
-## 待实现功能
+#### ChatStream
 
-- 流式调用Chat
+流式对话，实现了SSE式的请求，可以几个字几个字地实时获得答案，类似于直接使用网页端ai的效果
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+
+    "github.com/dingdinglz/openai"
+)
+
+func main() {
+    client := openai.NewClient(&openai.ClientConfig{
+        BaseUrl: "https://api.deepseek.com/v1",
+        ApiKey:  os.Getenv("DEEPSEEK_APIKEY"),
+    })
+    client.ChatStream("deepseek-chat", []openai.Message{
+        {Content: "你是golang大师，能够清晰的解释golang相关的概念", Role: "system"},
+        {Content: "什么是反射？", Role: "user"},
+    }, func(s string) {
+        fmt.Print(s)
+    })
+}
+```
+
+传入的函数的参数s即为answer的一小部分，如果把所有s按顺序拼接起来，就是完整的answer。
+
+#### ChatWithConfig && ChatStreamWithConfig
+
+上文中介绍到的Chat和ChatStream的参数比较简单，适合快速搭建起一个ai应用，而WithConfig系列的命令支持了所有官网允许的参数，例子中只拓展了几个参数，更多参数可以前往文档查看。
+
+例子中介绍了`ChatWithConfig`的使用，`ChatStreamWithConfig`的使用与前者类似，不再赘述。
+
+```go
+
+
+```
+
+## 待实现功能
 
 - 带图片的Vision类模型调用
 
