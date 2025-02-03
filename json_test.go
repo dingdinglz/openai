@@ -11,6 +11,7 @@ func TestJson(t *testing.T) {
 		Name string `json:"name"`
 		Path string `json:"path"`
 		Num  int
+		O    bool
 	}
 	res, _ := json.Marshal(&Test{
 		Name: "11",
