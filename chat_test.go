@@ -75,3 +75,27 @@ func TestChatStream(t *testing.T) {
 		t.Error(e.Error())
 	}
 }
+
+func TestChatReasonStream(t *testing.T) {
+	client := NewClient(&ClientConfig{
+		BaseUrl: "https://api.siliconflow.cn/v1",
+		ApiKey:  os.Getenv("OPENAI_KEY"),
+	})
+	reasoning := true
+	e := client.ChatReasonStream("deepseek-ai/DeepSeek-R1", []Message{
+		{Content: "你是一名golang大师", Role: "system"},
+		{Content: "解释一下context的用处", Role: "user"},
+	}, func(s string) {
+		// 思考内容
+		fmt.Print(s)
+	}, func(s string) {
+		if reasoning {
+			fmt.Println("\n思考结束！\nThink End")
+			reasoning = false
+		}
+		fmt.Print(s)
+	})
+	if e != nil {
+		t.Error(e.Error())
+	}
+}

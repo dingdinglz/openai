@@ -59,6 +59,23 @@ type realChatStreamResponse struct {
 	} `json:"choices"`
 }
 
+type realChatReasonStreamResponse struct {
+	ID                string `json:"id"`
+	Object            string `json:"object"`
+	Created           int    `json:"created"`
+	Model             string `json:"model"`
+	SystemFingerprint string `json:"system_fingerprint"`
+	Choices           []struct {
+		Index int `json:"index"`
+		Delta struct {
+			Content          string `json:"content"`
+			ReasoningContent string `json:"reasoning_content"`
+		} `json:"delta"`
+		Logprobs     interface{} `json:"logprobs"`
+		FinishReason interface{} `json:"finish_reason"`
+	} `json:"choices"`
+}
+
 func checkChatRequest(cr *ChatRequest) {
 	if cr.MaxTokens == 0 {
 		cr.MaxTokens = 4096
@@ -251,6 +268,59 @@ func (client Client) ChatStreamWithConfig(config ChatRequest, during func(string
 			return e
 		}
 		during(_json.Choices[0].Delta.Content)
+	}
+	return nil
+}
+
+// 相比于ChatStream，ChatReasonStream支持了深度思考的模型
+func (client Client) ChatReasonStream(model string, messages []Message, think func(string), during func(string)) error {
+	reqBody := ChatRequest{}
+	reqBody.Messages = messages
+	reqBody.Stream = true
+	reqBody.Model = model
+	checkChatRequest(&reqBody)
+	reqClient := client.newStreamClient()
+	jsonBody, e := json.Marshal(reqBody)
+	if e != nil {
+		return e
+	}
+	reqClient.SetBody(string(jsonBody))
+	reqClient.SetDoNotParseResponse(true)
+	httpres, e := reqClient.Post(client.Config.BaseUrl + "/chat/completions")
+	if e != nil {
+		return e
+	}
+	defer httpres.RawBody().Close()
+	scanner := bufio.NewScanner(httpres.RawBody())
+	initFlag := true
+	for scanner.Scan() {
+		_res := scanner.Text()
+		if _res == "" {
+			continue
+		}
+		if _res == "data: [DONE]" {
+			break
+		}
+		if initFlag {
+			resError, e := parseRealError([]byte(_res))
+			if e == nil {
+				return errors.New(resError)
+			}
+			initFlag = false
+			continue
+		}
+		_res = _res[6:]
+		var _json realChatReasonStreamResponse
+		e := json.Unmarshal([]byte(_res), &_json)
+		if e != nil {
+			return e
+		}
+		if _json.Choices[0].Delta.ReasoningContent != "" {
+			think(_json.Choices[0].Delta.ReasoningContent)
+		}
+		if _json.Choices[0].Delta.Content != "" {
+			during(_json.Choices[0].Delta.Content)
+		}
 	}
 	return nil
 }
