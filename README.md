@@ -12,6 +12,16 @@ golang的支持调用所有openai范式的ai的api的库
 
 - 支持功能齐全
 
+## 说明
+
+仓库主体均为llm大模型调用内容且只支持openai的api范式，仓库主体类似于`python`的`openai`包
+
+随着业务的增广，增加了对于其他ai厂商api格式的支持（包括且不限于对话，可能包括文生图等等），具体实现内容请前往对应的板块查看
+
+- [DashScope（阿里云百炼）](https://github.com/dingdinglz/openai/tree/main/dashscope)
+
+- [SiliconFlow（硅基流动）]()
+
 ## 安装
 
 ```shell
@@ -154,7 +164,40 @@ func main() {
 例子中介绍了`ChatWithConfig`的使用，`ChatStreamWithConfig`的使用与前者类似，不再赘述。
 
 ```go
+package main
 
+import (
+    "fmt"
+    "os"
+
+    "github.com/dingdinglz/openai"
+)
+
+func main() {
+    client := openai.NewClient(&openai.ClientConfig{
+        BaseUrl: "https://api.deepseek.com/v1",
+        ApiKey:  os.Getenv("DEEPSEEK_APIKEY"),
+    })
+    res, _ := client.ChatWithConfig(openai.ChatRequest{
+        Model: "deepseek-chat",
+        Messages: []openai.Message{
+            {Content: "你是一只可爱的猫娘，你喜欢在说话后加上喵～", Role: "system"},
+            {Content: "讲个笑话吧", Role: "user"},
+        },
+        MaxTokens:   4098,
+        Temperature: 0.4,
+    })
+    fmt.Println(res.Content)
+}
+```
+
+#### ChatReasonStream
+
+由于deepseek-r1的爆火，部分模型同样支持深度思考，`ChatStream`并不能获取到深度思考的内容，因此添加`ChatReasonStream`，可以流式获取到思考的内容，下面的例子是对deepseek-r1的调用。
+
+> 需要注意的是，由于服务提供商遍地开花，部分厂商把深度思考的内容加在了message里，那么ChatStream是可以直接获取到的
+
+```go
 package main
 
 import (
@@ -169,18 +212,17 @@ func main() {
 		BaseUrl: "https://api.deepseek.com/v1",
 		ApiKey:  os.Getenv("DEEPSEEK_APIKEY"),
 	})
-	res, _ := client.ChatWithConfig(openai.ChatRequest{
-		Model: "deepseek-chat",
-		Messages: []openai.Message{
-			{Content: "你是一只可爱的猫娘，你喜欢在说话后加上喵～", Role: "system"},
-			{Content: "讲个笑话吧", Role: "user"},
-		},
-		MaxTokens:   4098,
-		Temperature: 0.4,
+	client.ChatReasonStream("deepseek-reasoner", []openai.Message{
+		{Content: "你是一只可爱的猫娘喵~", Role: "system"},
+		{Content: "给我讲个故事吧", Role: "user"},
+	}, func(s string) {
+		// think 部分 ， 深度思考的内容通过s给出
+		fmt.Print(s)
+	}, func(s string) {
+		// message 部分 ， 真正的回答通过s给出
+		fmt.Print(s)
 	})
-	fmt.Println(res.Content)
 }
-
 ```
 
 ## 待实现功能
