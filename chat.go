@@ -55,7 +55,7 @@ type realChatStreamResponse struct {
 			Content string `json:"content"`
 		} `json:"delta"`
 		Logprobs     interface{} `json:"logprobs"`
-		FinishReason interface{} `json:"finish_reason"`
+		FinishReason string      `json:"finish_reason"`
 	} `json:"choices"`
 }
 
