@@ -73,6 +73,7 @@ func checkText2ImageRequest(r *Text2ImageRequest) {
 	}
 }
 
+// 调用文生图接口，成功返回生成的图片的url数组
 func (client *Client) Text2Image(req Text2ImageRequest) ([]string, error) {
 	httpReq := client.newHttpClient()
 	checkText2ImageRequest(&req)
