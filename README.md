@@ -20,7 +20,7 @@ golang的支持调用所有openai范式的ai的api的库
 
 - [DashScope（阿里云百炼）](https://github.com/dingdinglz/openai/tree/main/dashscope)
 
-- [SiliconFlow（硅基流动）]()
+- [SiliconFlow（硅基流动）](https://github.com/dingdinglz/openai/tree/main/siliconflow)
 
 ## 安装
 
