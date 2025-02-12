@@ -201,6 +201,42 @@ func main() {
 package main
 
 import (
+    "fmt"
+    "os"
+
+    "github.com/dingdinglz/openai"
+)
+
+func main() {
+    client := openai.NewClient(&openai.ClientConfig{
+        BaseUrl: "https://api.deepseek.com/v1",
+        ApiKey:  os.Getenv("DEEPSEEK_APIKEY"),
+    })
+    client.ChatReasonStream("deepseek-reasoner", []openai.Message{
+        {Content: "你是一只可爱的猫娘喵~", Role: "system"},
+        {Content: "给我讲个故事吧", Role: "user"},
+    }, func(s string) {
+        // think 部分 ， 深度思考的内容通过s给出
+        fmt.Print(s)
+    }, func(s string) {
+        // message 部分 ， 真正的回答通过s给出
+        fmt.Print(s)
+    })
+}
+```
+
+#### Fuction Calling
+
+[什么是function calling](https://docs.siliconflow.cn/cn/userguide/guides/function-calling)
+
+[视频 - 如何用本包使用function calling && 什么是function calling](https://www.bilibili.com/video/BV14wNSeWEGR/?share_source=copy_web&vd_source=48d9e62f9891701ebeb6dd853a402b14)
+
+上面的视频对该功能有详细的介绍，和示例代码的编写，下面是示例代码
+
+```go
+package main
+
+import (
 	"fmt"
 	"os"
 
@@ -209,21 +245,41 @@ import (
 
 func main() {
 	client := openai.NewClient(&openai.ClientConfig{
-		BaseUrl: "https://api.deepseek.com/v1",
-		ApiKey:  os.Getenv("DEEPSEEK_APIKEY"),
+		BaseUrl: "https://api.siliconflow.cn/v1",
+		ApiKey:  os.Getenv("APIKEY"),
 	})
-	client.ChatReasonStream("deepseek-reasoner", []openai.Message{
-		{Content: "你是一只可爱的猫娘喵~", Role: "system"},
-		{Content: "给我讲个故事吧", Role: "user"},
+	client.ChatWithTools("Qwen/Qwen2.5-14B-Instruct", []openai.ToolMessage{
+		{Role: "user", Content: "南京现在天气怎么样"},
+	}, []openai.ChatToolFunction{
+		{
+			Type: "function",
+			Function: openai.ChatToolFuctionDetail{
+				Name:        "weather",
+				Description: "通过传入地区名，获取该地区的天气状况",
+				Parameters: openai.ChatToolParameters{
+					Type: "object",
+					Properties: map[string]openai.ChatToolFuctionPropertie{
+						"location": {
+							Type:        "string",
+							Description: "地区名",
+						},
+					},
+				},
+			},
+		},
+	}, map[string]func(map[string]interface{}) string{
+		"weather": func(m map[string]interface{}) string {
+			fmt.Println(m["location"].(string) + "的数据被请求了")
+			return "不好"
+		},
 	}, func(s string) {
-		// think 部分 ， 深度思考的内容通过s给出
-		fmt.Print(s)
-	}, func(s string) {
-		// message 部分 ， 真正的回答通过s给出
-		fmt.Print(s)
+		fmt.Println("回复内容:" + s)
 	})
 }
+
 ```
+
+
 
 ## 待实现功能
 
