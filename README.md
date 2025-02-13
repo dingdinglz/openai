@@ -10,6 +10,8 @@ golang的支持调用所有openai范式的ai的api的库
 
 - 支持流式调用
 
+- 支持视觉模型和深度思考模型
+
 - 支持功能齐全
 
 ## 说明
@@ -225,13 +227,11 @@ func main() {
 }
 ```
 
-#### Fuction Calling
+#### ChatVisionStream
 
-[什么是function calling](https://docs.siliconflow.cn/cn/userguide/guides/function-calling)
+调用视觉模型对话，下面的例子是上传了一张本地图片test.png，并要求ai解题
 
-[视频 - 如何用本包使用function calling && 什么是function calling](https://www.bilibili.com/video/BV14wNSeWEGR/?share_source=copy_web&vd_source=48d9e62f9891701ebeb6dd853a402b14)
-
-上面的视频对该功能有详细的介绍，和示例代码的编写，下面是示例代码
+Url参数同样可以参数真实的url，也可以像例子中一样用base64编码上传本地图片
 
 ```go
 package main
@@ -248,42 +248,81 @@ func main() {
 		BaseUrl: "https://api.siliconflow.cn/v1",
 		ApiKey:  os.Getenv("APIKEY"),
 	})
-	client.ChatWithTools("Qwen/Qwen2.5-14B-Instruct", []openai.ToolMessage{
-		{Role: "user", Content: "南京现在天气怎么样"},
-	}, []openai.ChatToolFunction{
+	imageData, _ := os.ReadFile("test.png")
+	client.ChatVisionStream("deepseek-ai/deepseek-vl2", []openai.VisionMessage{
 		{
-			Type: "function",
-			Function: openai.ChatToolFuctionDetail{
-				Name:        "weather",
-				Description: "通过传入地区名，获取该地区的天气状况",
-				Parameters: openai.ChatToolParameters{
-					Type: "object",
-					Properties: map[string]openai.ChatToolFuctionPropertie{
-						"location": {
-							Type:        "string",
-							Description: "地区名",
-						},
+			Role: "user",
+			Content: []openai.VisionContent{
+				{
+					Type: openai.VISION_MESSAGE_IMAGE_URL,
+					ImageUrl: &openai.VisionContentImageUrl{
+						Url: openai.GenerateImageUrlBase64(imageData),
 					},
+				},
+				{
+					Type: openai.VISION_MESSAGE_TEXT,
+					Text: "请帮我解一下这道题",
 				},
 			},
 		},
-	}, map[string]func(map[string]interface{}) string{
-		"weather": func(m map[string]interface{}) string {
-			fmt.Println(m["location"].(string) + "的数据被请求了")
-			return "不好"
-		},
 	}, func(s string) {
-		fmt.Println("回复内容:" + s)
+		fmt.Print(s)
 	})
 }
-
 ```
 
+#### Fuction Calling
 
+[什么是function calling](https://docs.siliconflow.cn/cn/userguide/guides/function-calling)
 
-## 待实现功能
+[视频 - 如何用本包使用function calling && 什么是function calling](https://www.bilibili.com/video/BV14wNSeWEGR/?share_source=copy_web&vd_source=48d9e62f9891701ebeb6dd853a402b14)
 
-- 带图片的Vision类模型调用
+上面的视频对该功能有详细的介绍，和示例代码的编写，下面是示例代码
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+
+    "github.com/dingdinglz/openai"
+)
+
+func main() {
+    client := openai.NewClient(&openai.ClientConfig{
+        BaseUrl: "https://api.siliconflow.cn/v1",
+        ApiKey:  os.Getenv("APIKEY"),
+    })
+    client.ChatWithTools("Qwen/Qwen2.5-14B-Instruct", []openai.ToolMessage{
+        {Role: "user", Content: "南京现在天气怎么样"},
+    }, []openai.ChatToolFunction{
+        {
+            Type: "function",
+            Function: openai.ChatToolFuctionDetail{
+                Name:        "weather",
+                Description: "通过传入地区名，获取该地区的天气状况",
+                Parameters: openai.ChatToolParameters{
+                    Type: "object",
+                    Properties: map[string]openai.ChatToolFuctionPropertie{
+                        "location": {
+                            Type:        "string",
+                            Description: "地区名",
+                        },
+                    },
+                },
+            },
+        },
+    }, map[string]func(map[string]interface{}) string{
+        "weather": func(m map[string]interface{}) string {
+            fmt.Println(m["location"].(string) + "的数据被请求了")
+            return "不好"
+        },
+    }, func(s string) {
+        fmt.Println("回复内容:" + s)
+    })
+}
+```
 
 ## 详细文档
 
