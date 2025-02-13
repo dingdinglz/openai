@@ -24,7 +24,7 @@ func TestVisionChatStream(t *testing.T) {
 				},
 				{
 					Type: VISION_MESSAGE_TEXT,
-					Text: "这只猫在干嘛",
+					Text: "帮我做一下这道题",
 				},
 			},
 		},

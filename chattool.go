@@ -9,7 +9,7 @@ type ChatToolRequest struct {
 	Messages         []ToolMessage `json:"messages"`
 	Model            string        `json:"model"`
 	FrequencyPenalty int           `json:"frequency_penalty"`
-	MaxTokens        int           `json:"max_tokens"`
+	MaxTokens        int           `json:"max_tokens,omitempty"`
 	PresencePenalty  int           `json:"presence_penalty"`
 	ResponseFormat   struct {
 		Type string `json:"type"`
@@ -89,9 +89,6 @@ type realToolCalls struct {
 }
 
 func checkChatToolRequest(cr *ChatToolRequest) {
-	if cr.MaxTokens == 0 {
-		cr.MaxTokens = 4096
-	}
 	if cr.ResponseFormat.Type == "" {
 		cr.ResponseFormat.Type = "text"
 	}
