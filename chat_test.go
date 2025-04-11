@@ -60,6 +60,7 @@ func TestChatStream(t *testing.T) {
 	})
 	if e != nil {
 		t.Error(e.Error())
+		return
 	}
 	e = client.ChatStreamWithConfig(ChatRequest{
 		Model: "deepseek-chat",

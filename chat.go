@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"strings"
 )
 
 type Message struct {
@@ -180,11 +181,20 @@ func (client Client) ChatStream(model string, messages []Message, during func(st
 			break
 		}
 		if initFlag {
-			resError, e := parseRealError([]byte(_res))
-			if e == nil {
+			inError := _res
+			if strings.HasPrefix(_res, "data:") {
+				inError = inError[6:]
+			}
+			resError, e := parseRealError([]byte(inError))
+			if e != nil {
+				return errors.New(_res)
+			}
+			if resError != "" {
 				return errors.New(resError)
 			}
 			initFlag = false
+		}
+		if len(_res) < 7 {
 			continue
 		}
 		_res = _res[6:]
@@ -299,11 +309,20 @@ func (client Client) ChatReasonStream(model string, messages []Message, think fu
 			break
 		}
 		if initFlag {
-			resError, e := parseRealError([]byte(_res))
-			if e == nil {
+			inError := _res
+			if strings.HasPrefix(_res, "data:") {
+				inError = inError[6:]
+			}
+			resError, e := parseRealError([]byte(inError))
+			if e != nil {
+				return errors.New(_res)
+			}
+			if resError != "" {
 				return errors.New(resError)
 			}
 			initFlag = false
+		}
+		if len(_res) < 7 {
 			continue
 		}
 		_res = _res[6:]

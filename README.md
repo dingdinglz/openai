@@ -2,6 +2,8 @@
 
 golang的支持调用所有openai范式的ai的api的库
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/dingdinglz/openai)](https://goreportcard.com/report/github.com/dingdinglz/openai)
+
 ## 特征
 
 - 支持任何符合openai范式的api，如deepseek、kimi等
