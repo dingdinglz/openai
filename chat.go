@@ -115,6 +115,9 @@ func (client Client) Chat(model string, messages []Message) (*Message, error) {
 		}
 		return nil, errors.New(errorMessage)
 	}
+	if len(res.Choices) == 0 {
+		return &Message{}, nil
+	}
 	return &res.Choices[0].Message, nil
 }
 
@@ -147,6 +150,9 @@ func (client Client) EasyChat(model string, prompt string, message string) (stri
 			return "", errors.New(string(httpres.Body()))
 		}
 		return "", errors.New(errorMessage)
+	}
+	if len(res.Choices) == 0 {
+		return "", nil
 	}
 	return res.Choices[0].Message.Content, nil
 }
@@ -203,6 +209,9 @@ func (client Client) ChatStream(model string, messages []Message, during func(st
 		if e != nil {
 			return e
 		}
+		if len(_json.Choices) == 0 {
+			continue
+		}
 		during(_json.Choices[0].Delta.Content)
 	}
 	return nil
@@ -230,6 +239,9 @@ func (client Client) ChatWithConfig(config ChatRequest) (*Message, error) {
 			return nil, errors.New(string(httpres.Body()))
 		}
 		return nil, errors.New(errorMessage)
+	}
+	if len(res.Choices) == 0 {
+		return &Message{}, nil
 	}
 	return &res.Choices[0].Message, nil
 }
@@ -273,6 +285,9 @@ func (client Client) ChatStreamWithConfig(config ChatRequest, during func(string
 		e := json.Unmarshal([]byte(_res), &_json)
 		if e != nil {
 			return e
+		}
+		if len(_json.Choices) == 0 {
+			continue
 		}
 		during(_json.Choices[0].Delta.Content)
 	}
@@ -330,6 +345,9 @@ func (client Client) ChatReasonStream(model string, messages []Message, think fu
 		e := json.Unmarshal([]byte(_res), &_json)
 		if e != nil {
 			return e
+		}
+		if len(_json.Choices) == 0 {
+			continue
 		}
 		if _json.Choices[0].Delta.ReasoningContent != "" {
 			think(_json.Choices[0].Delta.ReasoningContent)
