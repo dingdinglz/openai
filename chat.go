@@ -186,6 +186,9 @@ func (client Client) ChatStream(model string, messages []Message, during func(st
 		if _res == "" {
 			continue
 		}
+		if strings.HasPrefix(_res, ":") {
+			continue
+		}
 		if _res == "data: [DONE]" {
 			break
 		}
