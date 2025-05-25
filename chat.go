@@ -166,6 +166,7 @@ func (client Client) ChatStream(model string, messages []Message, during func(st
 	reqBody.Messages = messages
 	reqBody.Stream = true
 	reqBody.Model = model
+	reqBody.MaxTokens = client.Config.MaxTokens
 	checkChatRequest(&reqBody)
 	reqClient := client.newStreamClient()
 	jsonBody, e := json.Marshal(reqBody)
