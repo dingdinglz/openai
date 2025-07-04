@@ -87,9 +87,6 @@ func checkChatRequest(cr *ChatRequest) {
 	if cr.TopP == 0 {
 		cr.TopP = 1
 	}
-	if cr.MaxTokens == 0 {
-		cr.MaxTokens = 8191
-	}
 }
 
 // api /chat/completions 的实现
